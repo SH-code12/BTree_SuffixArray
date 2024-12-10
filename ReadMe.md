@@ -1,6 +1,6 @@
 # BTree Implementation in C++
 
-This project is an implementation of a **BTree** data structure in standard C++. The BTree is a self-balancing search tree that maintains sorted data and allows for efficient insertion, deletion, and search operations. This implementation is generic, supports various data types, and works for any specified order.
+This project is an implementation of a **BTree** data structure in standard C++. The BTree is a self-balancing findKey tree that maintains sorted data and allows for efficient insertion, deletion, and findKey operations. This implementation is generic, supports various data types, and works for any specified order.
 
 ## Features
 - **Generic Data Types**: Works with any data type (e.g., `int`, `float`, `string`, etc.).
@@ -12,7 +12,7 @@ This project is an implementation of a **BTree** data structure in standard C++.
 
 ## How It Works
 The BTree is implemented using two classes:
-1. `BTreeNode`: Represents a single node in the BTree.
+1. `BNode`: Represents a single parentNode in the BTree.
 2. `BTree`: Manages the overall tree structure and provides methods for insertion and in-order traversal.
 
 ### Operations
