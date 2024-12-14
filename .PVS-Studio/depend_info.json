@@ -10,5 +10,17 @@
         ],
         "dependencies": [],
         "id": 1
+    },
+    {
+        "arguments": [
+            "C:\\Program Files\\JetBrains\\CLion 2022.3\\bin\\mingw\\bin\\g++.exe",
+            "-g",
+            "-fdiagnostics-color=always",
+            "-std=gnu++14",
+            "-DPVS_STUDIO",
+            "C:\\Users\\DELL\\Desktop\\SHaHD\\3th_first term\\Advanced_Data_Structure\\Assignments\\Assignment1\\BTree2.cpp"
+        ],
+        "dependencies": [],
+        "id": 2
     }
 ]
