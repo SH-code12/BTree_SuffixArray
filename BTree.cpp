@@ -1,204 +1,183 @@
-#include <bits/stdc++.h>
-
+#include <iostream>
 using namespace std;
 
-
-template<class T, int order>
-class BNode{
+template <typename T, int order>
+class Node {
 public:
- BNode* parentNode;
+    // Keys in the node (order - 1 keys)
+    T keys[order - 1];
+    // Pointers to child nodes (order children)
+    Node* children[order];
+    // Current number of keys
+    int keyCount;
+    // True if leaf node
+    bool isLeafNode;
 
-    vector<T> keys;
-    bool isLeaf;
-    vector<BNode<T,order>*> childrens;
-    BNode(){
-        isLeaf = false;
-        parentNode = nullptr;
-        keys.resize(0);
-        childrens.resize(0);
+    // Constructor
+    Node(bool isLeafNode = true) {
+        this->isLeafNode = isLeafNode;
+        keyCount = 0;
+        // Initialize children array to nullptr
+        for (int i = 0; i < order; ++i) {
+            children[i] = nullptr;
+        }
     }
-
 };
 
-template<class T, int order>
-class BTree{
+template <typename T, int order>
+class BTree {
 private:
-    BNode <T,order> * root ;
+    Node<T, order>* root;
 
-    // parentNode splitted its parentNode added to previous and back of neghibors
-    void split(BNode<T,order> * originalNode, T midIndex, int indxnewParent = 0) {
-        // get midIndex of child from the parentNode
-        // Move Keys and Children to the New Node
-        BNode<T,order> *  newnode = new BNode<T,order> ();
+    // Split the child of a node
+    void split(Node<T, order>* parentNode, int childIndex) {
+        Node<T, order>* fullChildNode = parentNode->children[childIndex];
+        Node<T, order>* newChildNode = new Node<T, order>(fullChildNode->isLeafNode);
 
-        for(int i =midIndex; i < originalNode->childrens[indxnewParent]->keys.size(); i++){
-            newnode->keys.push_back(originalNode->childrens[indxnewParent]->keys[i]);
+        int midIndex = (order - 1) / 2;
 
-            if(!originalNode->childrens[indxnewParent]->isLeaf){
-                newnode->childrens.push_back(originalNode->childrens[indxnewParent]->childrens[midIndex + 1]);}
-            // Remove Key from the Original Node
-            originalNode->childrens[indxnewParent]->keys.erase(originalNode->childrens[indxnewParent]->keys.begin() + midIndex);
-            // Remove Child Pointer if Not a Leaf
-            if(!originalNode->childrens[indxnewParent]->isLeaf){
-                originalNode->childrens[indxnewParent]->childrens.erase(originalNode->childrens[indxnewParent]->childrens.begin() + midIndex + 1);}
-            i--;
+        // Copy second half of keys from fullChildNode to newChildNode
+        newChildNode->keyCount = fullChildNode->keyCount - midIndex - 1;
+        for (int i = 0; i < newChildNode->keyCount; ++i) {
+            newChildNode->keys[i] = fullChildNode->keys[midIndex + 1 + i];
         }
-        newnode->parentNode = originalNode;
-        if(!originalNode->childrens[indxnewParent]->isLeaf)
-            newnode->childrens.push_back(originalNode->childrens[indxnewParent]->childrens.back());
-        if(originalNode->childrens.back()->isLeaf)
-            newnode->isLeaf = 1;
-        originalNode->childrens.insert(originalNode->childrens.begin() + indxnewParent + 1, newnode);
-        if(!originalNode->childrens[indxnewParent]->isLeaf)
-            originalNode->childrens[indxnewParent]->childrens.pop_back();
 
+        // If not a leaf, copy second half of children
+        if (!fullChildNode->isLeafNode) {
+            for (int i = 0; i <= newChildNode->keyCount; ++i) {
+                newChildNode->children[i] = fullChildNode->children[midIndex + 1 + i];
+            }
+        }
+
+        // Reduce the key count of fullChildNode
+        fullChildNode->keyCount = midIndex;
+
+        // Shift parent's children and insert newChildNode
+        for (int i = parentNode->keyCount; i > childIndex; --i) {
+            parentNode->children[i + 1] = parentNode->children[i];
+        }
+        parentNode->children[childIndex + 1] = newChildNode;
+
+        // Shift parent's keys and insert middle key
+        for (int i = parentNode->keyCount - 1; i >= childIndex; --i) {
+            parentNode->keys[i + 1] = parentNode->keys[i];
+        }
+        parentNode->keys[childIndex] = fullChildNode->keys[midIndex];
+
+        parentNode->keyCount++;
     }
 
-    BNode <T,order>*  findKey(T key){
-        BNode<T,order>* ptr = root;
-        bool found =0;
-        while(!found && ptr != nullptr && !ptr->isLeaf){
-            for(int i =0; i < ptr-> keys.size()  ; i++){
-                if(key < ptr->keys[i]){
-                    if(!ptr->childrens.empty() && ptr->childrens[i] != nullptr) {
-                        ptr = ptr->childrens[i];
+    // Insert into a node that is not full
+    void insertKeyNode(Node<T, order>* currentNode, T key) {
+        int insertIndex = currentNode->keyCount - 1;
 
-                        found = 1;
-                        break;
-                    }
-                    else {
-                        found =1;
-                        break;
-                    }
+        if (currentNode->isLeafNode) {
+            // Insert key into the correct position in the leaf node in sorted order
+            while (insertIndex >= 0 && key < currentNode->keys[insertIndex]) {
+                currentNode->keys[insertIndex + 1] = currentNode->keys[insertIndex];
+                insertIndex--;
+            }
+            currentNode->keys[insertIndex + 1] = key;  // Insert the key at the correct position
+            currentNode->keyCount++;
+        } else {
+            // Find the child to descend into
+            while (insertIndex >= 0 && key < currentNode->keys[insertIndex]) {
+                insertIndex--;
+            }
+            insertIndex++;
+
+            // Split the child if full
+            if (currentNode->children[insertIndex]->keyCount == order) { // Check if the child is full
+                split(currentNode, insertIndex);
+                // After splitting, check which child the new key should go into
+                if (key > currentNode->keys[insertIndex]) {
+                    insertIndex++;
                 }
             }
-            if(!found && !ptr->childrens.empty())
-            {ptr = ptr->childrens.back();}
+            // Recursively insert the key into the appropriate child
+            insertKeyNode(currentNode->children[insertIndex], key);
         }
-        return ptr;
     }
-    void traverse(BNode<T, order>* node, int level = 0) {
-        if (node == nullptr) return;
+
+    // Traverse and print the tree
+    void display(Node<T, order>* currentNode, int level = 0) {
+        if (currentNode == nullptr) return;
 
         // Print current level
-        for (int i = 0; i < level; ++i){
-            cout << "  ";}
-
-        // Print the keys of the current parentNode
-        for (int i = 0; i < node->keys.size(); ++i) {
-            cout << node->keys[i];
-            if (i < node->keys.size() - 1) cout << ",";
+        for (int i = 0; i < level; ++i) cout << "  ";
+        for (int i = 0; i < currentNode->keyCount; ++i) {
+            cout << currentNode->keys[i];
+            if (i < currentNode->keyCount - 1) cout << ",";
         }
-        cout << "\n";
+        cout << endl;
 
-        // Recursively print child nodes if not a isLeaf
-        if (!node->isLeaf) {
-            for (int i = 0; i < node->childrens.size(); ++i) {
-                traverse(node->childrens[i], level + 1);
+        // Recursively print child nodes
+        if (!currentNode->isLeafNode) {
+            for (int i = 0; i <= currentNode->keyCount; ++i) {
+                display(currentNode->children[i], level + 1);
             }
         }
     }
+
 public:
-    BTree(){
+    BTree() {
         root = nullptr;
     }
-    void Insert(T key){
-        BNode<T,order>* targetNode = findKey(key);
-        T tempKey = key;
 
-        while(targetNode != nullptr && targetNode->keys.size() == order - 1 ) {
-            vector<T> sorted = targetNode->keys;
-
-            sorted.push_back(tempKey);
-            sort(sorted.begin(),sorted.end());
-            if(sorted.size()==order) {
-                tempKey = sorted[order / 2];
-
-                sorted.erase(find(sorted.begin(), sorted.end(), tempKey));
-
-                targetNode->keys = sorted;
-                if(targetNode->parentNode != nullptr){
-                    int i =0;
-
-                    for(auto child : targetNode->parentNode->childrens){
-                        if(child == targetNode){
-                            split(targetNode->parentNode, order / 2 , i);
-                        }
-                        i++;
-                    }
-                }
-                else {
-                    BNode<T, order> *newRoot = new BNode<T, order>;
-                    newRoot->childrens.push_back(targetNode);
-                    targetNode->parentNode = newRoot;
-                    root = newRoot;
-                    split(targetNode->parentNode, order / 2 );
-
-                }
-            }else{
-                targetNode->keys = sorted;
-                break;
+    // Insert a key into the BTree
+    void insert(T key) {
+        if (root == nullptr) {
+            root = new Node<T, order>(true);
+            root->keys[0] = key;
+            root->keyCount = 1;
+        } else {
+            if (root->keyCount == order) {
+                Node<T, order>* newRoot = new Node<T, order>(false);
+                newRoot->children[0] = root;
+                split(newRoot, 0);
+                root = newRoot;
             }
-
-            targetNode = targetNode->parentNode;
-        }
-        if(targetNode == nullptr) {
-            BNode<T, order> *newRoot = new BNode<T, order>;
-            if (root == nullptr)
-                newRoot->isLeaf = 1;
-            newRoot->keys.push_back(tempKey);
-            targetNode = newRoot;
-            root = newRoot;
-        }
-        else{
-
-            targetNode->keys.push_back(tempKey);
-            sort(targetNode->keys.begin(), targetNode->keys.end());
-
+            insertKeyNode(root, key);
         }
     }
 
-    void Print() {
-        traverse(root);
+    // Print the BTree
+    void print() {
+        display(root);
     }
-
 };
 
-int main(){
-    BTree<int,3> t1;
-    t1.Insert(1);
-    t1.Insert(5);
-    t1.Insert(0);
-    t1.Insert(4);
-    t1.Insert(3);
-    t1.Insert(2);
-    t1.Print(); // Should output the following on the screen:
-/*
-1,4
-0
-2,3
-5
-*/
-    cout<<"\n";
-    BTree <char,5> t; // Construct a BTree of order 5, which stores char data, Look at the example in our lecture:
-    t.Insert('G');
-    t.Insert('I');
-    t.Insert('B');
-    t.Insert('J');
-    t.Insert('C');
-    t.Insert('A');
-    t.Insert('K');
-    t.Insert('E');
-    t.Insert('D');
-    t.Insert('S');
-    t.Insert('T');
-    t.Insert('R');
-    t.Insert('L');
-    t.Insert('F');
-    t.Insert('H');
-    t.Insert('M');
-    t.Insert('N');
-    t.Insert('P');
-    t.Insert('Q');
-    t.Print();
+int main() {
+    BTree<int, 3> intTree;
+    intTree.insert(1);
+    intTree.insert(5);
+    intTree.insert(0);
+    intTree.insert(4);
+    intTree.insert(3);
+    intTree.insert(2);
+    intTree.print();
+
+    BTree<char, 5> charTree;
+    charTree.insert('G');
+    charTree.insert('I');
+    charTree.insert('B');
+    charTree.insert('J');
+    charTree.insert('C');
+    charTree.insert('A');
+    charTree.insert('K');
+    charTree.insert('E');
+    charTree.insert('D');
+    charTree.insert('S');
+    charTree.insert('T');
+    charTree.insert('R');
+    charTree.insert('L');
+    charTree.insert('F');
+    charTree.insert('H');
+    charTree.insert('M');
+    charTree.insert('N');
+    charTree.insert('P');
+    charTree.insert('Q');
+    charTree.print(); 
+
+    return 0;
 }

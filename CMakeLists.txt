@@ -4,4 +4,4 @@ project(Assignment1)
 set(CMAKE_CXX_STANDARD 14)
 
 add_executable(Assignment1
-        BTree.cpp BTree2.cpp)
+        BTreeVector.cpp BTree.cpp suffixArray.cpp)

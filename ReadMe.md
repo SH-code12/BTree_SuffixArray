@@ -6,8 +6,8 @@ This project is an implementation of a **BTree** data structure in standard C++.
 - **Generic Data Types**: Works with any data type (e.g., `int`, `float`, `string`, etc.).
 - **Configurable Order**: The order of the BTree can be specified during instantiation.
 - **Efficient Operations**:
-    - Insert: \(O(\log n)\)
-    - Print: \(O(n)\)
+    - Insert: \(O(\log length)\)
+    - Print: \(O(length)\)
 - **Custom Implementation**: No external libraries (except basic input/output) are used.
 
 ## How It Works
