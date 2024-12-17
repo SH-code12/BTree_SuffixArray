@@ -24,14 +24,6 @@ public:
         tempRankArray = new int[length];
     }
 
-    // Destructor
-    ~SuffixArray() {
-
-        delete[] suffixIndices;
-        delete[] currentRankArray;
-        delete[] tempRankArray;
-    }
-
     // Function to Build SuffixArray
     void BuildSuffixArray() {
         // Initialize the suffix array and rank array
